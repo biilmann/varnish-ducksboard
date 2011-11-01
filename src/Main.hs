@@ -21,12 +21,15 @@ main = do
   rid <- getEnv "DB_REQ_MIN_ID"
   eid <- getEnv "DB_ERROR_ID"
   did <- getEnv "DB_DOMAIN_ID"
+
   requests <- newMVar 0
   errors   <- newMVar (0,0)
   domains  <- newMVar M.empty
+
   forkIO $ requestLogger key rid requests
   forkIO $ errorLogger key eid errors
   forkIO $ domainLogger key did domains
+
   hGetContents stdin >>= mapM_ (process requests errors domains) . lines
 
 
@@ -39,7 +42,9 @@ process requests errors domains line =
           return $ M.alter updateDomain domain dom
       __              -> return ()
   where
-    success (_:s:_) = let status = read s in status >= 200 && status <= 400
+    success (_:s:_) =
+        let status = read s in
+        status == 404 || (status >= 200 && status <= 400)
     updateDomain Nothing = Just 1
     updateDomain (Just count) = Just (count + 1)
 
@@ -72,9 +77,9 @@ errorWidgetBody _ (bad, total) = "{\"value\":" ++ (printf "%.2f" $ bad / total) 
 domainWidgetBody time map =
     let (domain, hits) = M.foldWithKey mostPopular ("", 0) map in
     "{\"timestamp\":" ++ (show time) ++ "," ++
-    "\"value\": {\"title\":\"Most hits during the last 5 minutes\", " ++
+    "\"value\": {\"title\":\"" ++ domain ++ "\", " ++
     "\"image\":\"https://app.ducksboard.com/static/img/timeline/green.gif\"," ++
-    "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\"," ++
+    "\"content\":\"" ++ (show hits) ++ " hits\"," ++
     "\"link\":\"http://" ++ domain ++ "\"}}"
   where
     mostPopular domain hits (topDomain, topHits) = if hits > topHits then (domain, hits) else (topDomain, topHits)
