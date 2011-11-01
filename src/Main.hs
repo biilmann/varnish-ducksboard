@@ -69,9 +69,10 @@ errorWidgetBody :: EpochTime -> (Double, Double) -> String
 errorWidgetBody _ (bad, total) = "{\"value\":" ++ (printf "%.2f" $ bad / total) ++ "}"
 
 
-domainWidgetBody _ map =
+domainWidgetBody time map =
     let (domain, hits) = M.foldWithKey mostPopular ("", 0) map in
-    "\"title\":\"Most hits during the last 5 minutes\", " ++
+    "{\"timestamp\":" ++ (show time) ++ "," ++
+    "\"value\": {\"title\":\"Most hits during the last 5 minutes\", " ++
     "\"image\":\"https://app.ducksboard.com/static/img/timeline/green.gif\"," ++
     "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\"," ++
     "\"link\":\"http://" ++ domain ++ "\"}"
