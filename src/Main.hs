@@ -30,7 +30,7 @@ config = Config { api_key = Arg.def, requests_widget = Arg.def, errors_widget = 
 main = do
     args <- Arg.cmdArgs config
 
-    let key = api_key config
+    let key = api_key args
 
     requests <- newMVar 0
     errors   <- newMVar (0,0)
