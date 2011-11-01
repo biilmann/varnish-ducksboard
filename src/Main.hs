@@ -5,7 +5,7 @@ module Main where
 import System.IO
 import System.Posix.Time
 import System.Posix.Types (EpochTime)
-import qualified System.Console.CmdArgs as Arg
+import qualified System.Console.CmdArgs.Implicit as Arg
 import Control.Concurrent.MVar
 import Control.Concurrent
 import Control.Monad
@@ -36,9 +36,9 @@ main = do
     errors   <- newMVar (0,0)
     domains  <- newMVar M.empty
 
-    forkIO $ requestLogger key (requests_widget config) requests
-    forkIO $ errorLogger   key (errors_widget config)   errors
-    forkIO $ domainLogger  key (domains_widget config)  domains
+    forkIO $ requestLogger key (requests_widget args) requests
+    forkIO $ errorLogger   key (errors_widget args)   errors
+    forkIO $ domainLogger  key (domains_widget args)  domains
 
     hGetContents stdin >>= mapM_ (process requests errors domains) . lines
 
@@ -68,7 +68,7 @@ errorLogger = widgetLogger 60000000 (0,0) errorWidgetBody
 domainLogger = widgetLogger (5 * 60000000) M.empty domainWidgetBody
 
 
-widgetLogger _ _ _ _ Nothing _ = return ()
+widgetLogger _ _ _ _ Nothing _ = putStrLn "Nothing to do"
 widgetLogger interval zero bodyFn key (Just wid) mvar = forever $ do
     threadDelay interval
     modifyMVar_ mvar $ \counter -> do
