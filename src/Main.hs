@@ -10,6 +10,7 @@ import Control.Concurrent
 import Control.Monad
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap as M
+import Text.Printf
 import Network.HTTP.Enumerator
 import Network.TLS (TLSCertificateUsage(..))
 
@@ -63,7 +64,7 @@ widgetLogger interval zero bodyFn key (Just wid) mvar = forever $ do
 requestWidgetBody _ counter = "{\"value\":" ++ (show counter) ++ "}"
 
 
-errorWidgetBody _ (bad, total) = "{\"value\":" ++ (show $ bad / total) ++ "}"
+errorWidgetBody _ (bad, total) = "{\"value\":" ++ (printf "%.2f" $ bad / total) ++ "}"
 
 
 domainWidgetBody time map =
