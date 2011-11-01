@@ -1,14 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 module Main where
 
 
 import System.IO
-import System.Posix.Env
 import System.Posix.Time
 import System.Posix.Types (EpochTime)
+import qualified System.Console.CmdArgs as Arg
 import Control.Concurrent.MVar
 import Control.Concurrent
 import Control.Monad
+import Data.Data
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap as M
 import Text.Printf
@@ -16,21 +17,30 @@ import Network.HTTP.Enumerator
 import Network.TLS (TLSCertificateUsage(..))
 
 
+data Config = Config
+            { api_key         :: String
+            , requests_widget :: Maybe String
+            , errors_widget   :: Maybe String
+            , domains_widget  :: Maybe String
+            } deriving (Show, Data, Typeable)
+
+
+config = Config { api_key = Arg.def, requests_widget = Arg.def, errors_widget = Arg.def, domains_widget = Arg.def }
+
 main = do
-  Just key <- getEnv "DB_KEY"
-  rid <- getEnv "DB_REQ_MIN_ID"
-  eid <- getEnv "DB_ERROR_ID"
-  did <- getEnv "DB_DOMAIN_ID"
+    args <- Arg.cmdArgs config
 
-  requests <- newMVar 0
-  errors   <- newMVar (0,0)
-  domains  <- newMVar M.empty
+    let key = api_key config
 
-  forkIO $ requestLogger key rid requests
-  forkIO $ errorLogger key eid errors
-  forkIO $ domainLogger key did domains
+    requests <- newMVar 0
+    errors   <- newMVar (0,0)
+    domains  <- newMVar M.empty
 
-  hGetContents stdin >>= mapM_ (process requests errors domains) . lines
+    forkIO $ requestLogger key (requests_widget config) requests
+    forkIO $ errorLogger   key (errors_widget config)   errors
+    forkIO $ domainLogger  key (domains_widget config)  domains
+
+    hGetContents stdin >>= mapM_ (process requests errors domains) . lines
 
 
 process requests errors domains line =
