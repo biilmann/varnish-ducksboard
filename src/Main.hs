@@ -80,7 +80,9 @@ domainWidgetBody _ map =
 updateWidget key wid body = do
     request <- apiRequest key wid body
     putStrLn $ "Sending: " ++ body
-    withManager $ \manager -> httpLbs request manager
+    withManager $ \manager -> do
+	response <- httpLbs request manager
+	putStrLn (show response)
 
 
 apiRequest key wid body = do
