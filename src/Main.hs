@@ -5,6 +5,7 @@ module Main where
 import System.IO
 import System.Posix.Env
 import System.Posix.Time
+import System.Posix.Types (EpochTime)
 import Control.Concurrent.MVar
 import Control.Concurrent
 import Control.Monad
@@ -64,6 +65,7 @@ widgetLogger interval zero bodyFn key (Just wid) mvar = forever $ do
 requestWidgetBody _ counter = "{\"value\":" ++ (show counter) ++ "}"
 
 
+errorWidgetBody :: EpochTime -> (Double, Double) -> String
 errorWidgetBody _ (bad, total) = "{\"value\":" ++ (printf "%.2f" $ bad / total) ++ "}"
 
 
@@ -71,7 +73,7 @@ domainWidgetBody _ map =
     let (domain, hits) = M.foldWithKey mostPopular ("", 0) map in
     "\"title\":\"Most hits during the last 5 minutes\", " ++
     "\"image\":\"https://app.ducksboard.com/static/img/timeline/green.gif\"," ++
-    "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\",
+    "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\"," ++
     "\"link\":\"http://" ++ domain ++ "\"}"
   where
     mostPopular domain hits (topDomain, topHits) = if hits > topHits then (domain, hits) else (topDomain, topHits)
