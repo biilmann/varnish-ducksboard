@@ -67,12 +67,12 @@ requestWidgetBody _ counter = "{\"value\":" ++ (show counter) ++ "}"
 errorWidgetBody _ (bad, total) = "{\"value\":" ++ (printf "%.2f" $ bad / total) ++ "}"
 
 
-domainWidgetBody time map =
+domainWidgetBody _ map =
     let (domain, hits) = M.foldWithKey mostPopular ("", 0) map in
-    "{\"timestamp\":" ++ (show time) ++ "," ++
     "\"title\":\"Most hits during the last 5 minutes\", " ++
     "\"image\":\"https://app.ducksboard.com/static/img/timeline/green.gif\"," ++
-    "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\"}"
+    "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\",
+    "\"link\":\"http://" ++ domain ++ "\"}"
   where
     mostPopular domain hits (topDomain, topHits) = if hits > topHits then (domain, hits) else (topDomain, topHits)
 
