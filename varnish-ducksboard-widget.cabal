@@ -50,7 +50,9 @@ Executable varnish-ducksboard-widget
     base >= 4.3 && < 5,
     bytestring >= 0.9,
     unix >= 2.4,
-    tls >= 0.8,
+    cryptocipher == 0.2.14,
+    tls == 0.8.1,
+    tls-extra == 0.4.0,
     http-enumerator == 0.7.*
   
   -- Modules not exported by this package.

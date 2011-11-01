@@ -37,8 +37,7 @@ logger key wid requests = forever $ do
 logRequests key wid counter = do
     time    <- epochTime
     request <- apiRequest time
-    withManager $ \manager -> do 
-      response <- httpLbs request manager
+    withManager $ \manager -> httpLbs request manager
   where
     apiRequest time = do
       req <- parseUrl url
