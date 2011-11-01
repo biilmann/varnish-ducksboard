@@ -75,7 +75,7 @@ domainWidgetBody time map =
     "\"value\": {\"title\":\"Most hits during the last 5 minutes\", " ++
     "\"image\":\"https://app.ducksboard.com/static/img/timeline/green.gif\"," ++
     "\"content\":\"" ++ domain ++ " got " ++ (show hits) ++ "\"," ++
-    "\"link\":\"http://" ++ domain ++ "\"}"
+    "\"link\":\"http://" ++ domain ++ "\"}}"
   where
     mostPopular domain hits (topDomain, topHits) = if hits > topHits then (domain, hits) else (topDomain, topHits)
 
@@ -84,8 +84,8 @@ updateWidget key wid body = do
     request <- apiRequest key wid body
     putStrLn $ "Sending: " ++ body
     withManager $ \manager -> do
-	response <- httpLbs request manager
-	putStrLn (show response)
+        response <- httpLbs request manager
+        putStrLn (show response)
 
 
 apiRequest key wid body = do
