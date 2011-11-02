@@ -22,30 +22,42 @@ data Config = Config
             , requests_widget :: Maybe String
             , errors_widget   :: Maybe String
             , domains_widget  :: Maybe String
+            , time_widget     :: Maybe String
             } deriving (Show, Data, Typeable)
 
 
-config = Config { api_key = Arg.def, requests_widget = Arg.def, errors_widget = Arg.def, domains_widget = Arg.def }
+config = Config
+       { api_key = Arg.def
+       , requests_widget = Arg.def
+       , errors_widget = Arg.def
+       , domains_widget = Arg.def
+       , time_widget = Arg.def
+       }
 
 main = do
     args <- Arg.cmdArgs config
 
     let key = api_key args
 
-    requests <- newMVar 0
-    errors   <- newMVar (0,0)
-    domains  <- newMVar M.empty
+    requests     <- newMVar 0
+    errors       <- newMVar (0,0)
+    domains      <- newMVar M.empty
+    responseTime <- newMVar (0,0)
 
     forkIO $ requestLogger key (requests_widget args) requests
     forkIO $ errorLogger   key (errors_widget args)   errors
     forkIO $ domainLogger  key (domains_widget args)  domains
+    forkIO $ timeLogger    key (time_widget args)     responseTime
 
-    hGetContents stdin >>= mapM_ (process requests errors domains) . lines
+    hGetContents stdin >>= mapM_ (process requests errors domains responseTime) . lines
 
 
-process requests errors domains line =
+process requests errors domains responseTime line =
     case drop 1 (words line) of
-      ("ReqEnd":xs)   -> modifyMVar_ requests $ \counter -> return (counter + 1)
+      ("ReqEnd":xs)   -> do
+          modifyMVar_ requests $ \counter -> return (counter + 1)
+          modifyMVar_ responseTime $ \(totalTime, total) ->
+              let (_:_:_:_:t:_) = xs in return (totalTime + (read t), total + 1) 
       ("RxStatus":xs) -> modifyMVar_ errors   $ \(bad, total) ->
           return $ if success xs then (bad, total + 1) else (bad + 1, total + 1)
       ("RxHeader":"c":"Host:":domain:_) -> modifyMVar_ domains $ \dom ->
@@ -60,12 +72,9 @@ process requests errors domains line =
 
 
 requestLogger = widgetLogger 60000000 0 requestWidgetBody
-
-
-errorLogger = widgetLogger 60000000 (0,0) errorWidgetBody
-
-
-domainLogger = widgetLogger (5 * 60000000) M.empty domainWidgetBody
+errorLogger   = widgetLogger 60000000 (0,0) errorWidgetBody
+domainLogger  = widgetLogger (5 * 60000000) M.empty domainWidgetBody
+timeLogger    = widgetLogger 60000000 (0,0) timeWidgetBody
 
 
 widgetLogger _ _ _ _ Nothing _ = putStrLn "Nothing to do"
@@ -83,6 +92,8 @@ requestWidgetBody _ counter = "{\"value\":" ++ (show counter) ++ "}"
 errorWidgetBody :: EpochTime -> (Double, Double) -> String
 errorWidgetBody _ (bad, total) = "{\"value\":" ++ (printf "%.2f" $ bad / total) ++ "}"
 
+timeWidgetBody :: EpochTime -> (Double, Double) -> String
+timeWidgetBody _ (totalTime, total) = "{\"value\":" ++ (printf "%.4f" $ totalTime / total) ++ "}"
 
 domainWidgetBody time map =
     let (domain, hits) = M.foldWithKey mostPopular ("", 0) map in
@@ -93,6 +104,8 @@ domainWidgetBody time map =
     "\"link\":\"http://" ++ domain ++ "\"}}"
   where
     mostPopular domain hits (topDomain, topHits) = if hits > topHits then (domain, hits) else (topDomain, topHits)
+
+
 
 
 updateWidget key wid body = do
